@@ -1,7 +1,6 @@
 #ifndef UVCLS_LOOP_INCLUDE_H
 #define UVCLS_LOOP_INCLUDE_H
 
-
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -11,6 +10,7 @@
 
 #include "emitter.hpp"
 #include "util.hpp"
+#include "resource.hpp"
 
 namespace uvcls {
 

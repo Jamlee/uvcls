@@ -6,6 +6,8 @@
             "src/lib/type_info.hpp",
             "src/lib/util.hpp",
             "src/lib/loop.hpp",
+            "src/lib/resource.hpp",
+            "src/lib/underlying_type.hpp",
         ],
         "dependencies": ["deps/uv/uv.gyp:libuv"],
     },
