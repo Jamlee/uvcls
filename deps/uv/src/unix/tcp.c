@@ -45,6 +45,7 @@ static int new_socket(uv_tcp_t* handle, int domain, unsigned long flags) {
     return err;
   }
 
+  // JAMLEE: 如果有 UV_HANDLE_BOUND 标志，则绑定 ip 地址
   if (flags & UV_HANDLE_BOUND) {
     /* Bind this new socket to an arbitrary port */
     slen = sizeof(saddr);
@@ -63,7 +64,7 @@ static int new_socket(uv_tcp_t* handle, int domain, unsigned long flags) {
   return 0;
 }
 
-
+// JAMLEE: 是否有底层的 fd, 没有则新建。用于 connect 或者 listen
 static int maybe_new_socket(uv_tcp_t* handle, int domain, unsigned long flags) {
   struct sockaddr_storage saddr;
   socklen_t slen;
@@ -200,7 +201,7 @@ int uv__tcp_bind(uv_tcp_t* tcp,
   return 0;
 }
 
-
+// JAMLEE: 创建 socket 放入 iowatcher, 连接后开始触发事件
 int uv__tcp_connect(uv_connect_t* req,
                     uv_tcp_t* handle,
                     const struct sockaddr* addr,
@@ -324,7 +325,7 @@ int uv_tcp_close_reset(uv_tcp_t* handle, uv_close_cb close_cb) {
   return 0;
 }
 
-
+// JAMLEE: 对 handle 做操作
 int uv_tcp_listen(uv_tcp_t* tcp, int backlog, uv_connection_cb cb) {
   static int single_accept = -1;
   unsigned long flags;

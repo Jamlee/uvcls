@@ -88,6 +88,7 @@
 extern char *mkdtemp(char *template); /* See issue #740 on AIX < 7 */
 #endif
 
+// JAMLEE: 初始化 req 类型
 #define INIT(subtype)                                                         \
   do {                                                                        \
     if (req == NULL)                                                          \
@@ -137,6 +138,7 @@ extern char *mkdtemp(char *template); /* See issue #740 on AIX < 7 */
   }                                                                           \
   while (0)
 
+// JAMLEE: 提交 fs 相关的任务。通过 uv__work_submit 或者 uv__fs_work
 #define POST                                                                  \
   do {                                                                        \
     if (cb != NULL) {                                                         \
@@ -257,7 +259,7 @@ static ssize_t uv__fs_mkdtemp(uv_fs_t* req) {
   return mkdtemp((char*) req->path) ? 0 : -1;
 }
 
-
+// JAMLEE: 打开文件请求。uv_fs_t
 static ssize_t uv__fs_open(uv_fs_t* req) {
 #ifdef O_CLOEXEC
   return open(req->path, req->flags | O_CLOEXEC, req->mode);
@@ -336,7 +338,7 @@ static ssize_t uv__fs_preadv(uv_file fd,
 }
 #endif
 
-
+// JAMLEE: 读写请求。uv_fs_t
 static ssize_t uv__fs_read(uv_fs_t* req) {
 #if defined(__linux__)
   static int no_preadv;
@@ -1379,12 +1381,13 @@ static ssize_t uv__fs_write_all(uv_fs_t* req) {
   return total;
 }
 
-
+// JAMLEE: 提交 1 个任务到线程池
 static void uv__fs_work(struct uv__work* w) {
   int retry_on_eintr;
   uv_fs_t* req;
   ssize_t r;
 
+  // worker 关联到了 req (uv_fs_t)
   req = container_of(w, uv_fs_t, work_req);
   retry_on_eintr = !(req->fs_type == UV_FS_CLOSE ||
                      req->fs_type == UV_FS_READ);
