@@ -11,6 +11,7 @@
 #include <utility>
 #include <uv.h>
 #include "type_info.hpp"
+#include "config.h"
 
 namespace uvcls {
 
@@ -86,7 +87,7 @@ class Emitter {
         virtual void clear() noexcept = 0;
     };
 
-    // 事件发射后，对应的处理类。对应多个监听函数
+    // 事件发射后，对应的处理类。1个Handler处理1类事件（例如 ErrorEvent）对应多个监听函数
     template<typename E>
     struct Handler final: BaseHandler {
         using Listener = std::function<void(E &, T &)>;
@@ -156,7 +157,7 @@ class Emitter {
         ListenerList onL{};
     };
 
-    // handler 函数
+    // handler 函数，指定 1 个类型
     template<typename E>
     Handler<E> &handler() noexcept {
         auto id = type<E>();
@@ -295,10 +296,27 @@ private:
     std::unordered_map<std::uint32_t, std::unique_ptr<BaseHandler>> handlers{};
 };
 
-} // namespace uvcls
 
-#ifndef UVCLS_AS_LIB
-#    include "emitter.cpp"
-#endif
+UVCLS_INLINE int ErrorEvent::translate(int sys) noexcept {
+    return uv_translate_sys_error(sys);
+}
+
+UVCLS_INLINE const char *ErrorEvent::what() const noexcept {
+    return uv_strerror(ec);
+}
+
+UVCLS_INLINE const char *ErrorEvent::name() const noexcept {
+    return uv_err_name(ec);
+}
+
+UVCLS_INLINE int ErrorEvent::code() const noexcept {
+    return ec;
+}
+
+UVCLS_INLINE ErrorEvent::operator bool() const noexcept {
+    return ec < 0;
+}
+
+} // namespace uvcls
 
 #endif // UVCLS_EMITTER_INCLUDE_H

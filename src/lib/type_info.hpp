@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <string_view>
+#include <iostream>
 
 namespace uvcls {
 
@@ -13,6 +14,8 @@ namespace uvcls {
 
 namespace internal {
 
+// nodiscard 是c++17引入的一种标记符，其语法一般为[[nodiscard]]或[[nodiscard("string")]](c++20引入)，含义可以理解为“不应舍弃”。nodiscard一般用于标记函数的返回值或者某个类，当使用某个弃值表达式而不是cast to void 来调用相关函数时，编译器会发出相关warning。
+// hash 算法：https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
 // Fowler-Noll-Vo hash function v. 1a - the good
 [[nodiscard]] static constexpr std::uint32_t fnv1a(const char *curr) noexcept {
     constexpr std::uint32_t offset = 2166136261;
@@ -44,6 +47,7 @@ template<typename Type>
  * @endcond
  */
 
+// 对传入的模板类型，返回数字id。__PRETTY_FUNCTION__ 是 g++ 的内置的
 /**
  * @brief Returns a numerical identifier for a given type.
  * @tparam Type The type for which to return the numerical identifier.
@@ -52,6 +56,9 @@ template<typename Type>
 template<typename Type>
 [[nodiscard]] static constexpr std::uint32_t type() noexcept {
 #if defined __clang__ || defined __GNUC__
+    // 会得到这种输出，带有 Type的类型
+    // std::cout << __PRETTY_FUNCTION__ << std::endl;
+    // constexpr uint32_t uvcls::type() [with Type = HelloWorld; uint32_t = unsigned int]
     return internal::fnv1a(__PRETTY_FUNCTION__);
 #elif defined _MSC_VER
     return internal::fnv1a(__FUNCSIG__);
