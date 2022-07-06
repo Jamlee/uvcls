@@ -73,11 +73,15 @@ TEST(Emitter, EmptyAndClear) {
 TEST(Emitter, On) {
     TestEmitter emitter{};
 
-    emitter.on<FakeEvent>([](const auto &, auto &) {});
+    // 传入空的函数（lambda表达式）
+    emitter.on<FakeEvent>([](const auto &, auto &) {
+        // std::cout << "hello fake event" << std::endl;
+    });
 
     ASSERT_FALSE(emitter.empty());
     ASSERT_FALSE(emitter.empty<FakeEvent>());
 
+    // TestEmitter 是继承的 emitter 这个 emitter 暂时只能发送 1 种事件  FakeEvent
     emitter.emit();
 
     ASSERT_FALSE(emitter.empty());
@@ -154,4 +158,41 @@ TEST(Emitter, CallbackClear) {
 
     ASSERT_FALSE(emitter.empty());
     ASSERT_FALSE(emitter.empty<FakeEvent>());
+}
+
+class DataEvent {
+public:
+    void SayData() const {
+        std::cout << "hello data event" << std::endl;
+    }
+};
+
+class CloseEvent {
+public:
+    void SayClose() const {
+        std::cout << "hello close event" << std::endl;
+    }
+};
+
+struct TestMutilEventEmitter: uvcls::Emitter<TestMutilEventEmitter> {
+    void emitData() {
+        publish(DataEvent{});
+    }
+
+    void emitClose() {
+        publish(CloseEvent{});
+    }
+};
+
+// 测试一个 emitter 触发
+TEST(Emitter, OnMutipleTypeEvent) {
+    TestMutilEventEmitter emitter{};
+    auto conn1 = emitter.on<DataEvent>([](const auto & event, auto & emitter) {
+        event.SayData();
+    });
+    auto conn2 = emitter.on<CloseEvent>([](const auto & event, auto & emitter) {
+        event.SayClose();
+    });
+    emitter.emitClose();
+    emitter.emitData();
 }

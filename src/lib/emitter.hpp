@@ -81,15 +81,19 @@ private:
  */
 template<typename T>
 class Emitter {
+    // 内部类
     struct BaseHandler {
         virtual ~BaseHandler() noexcept = default;
         virtual bool empty() const noexcept = 0;
         virtual void clear() noexcept = 0;
     };
 
-    // 事件发射后，对应的处理类。1个Handler处理1类事件（例如 ErrorEvent）对应多个监听函数
+    // 内部类，事件发射后，对应的处理类。1个Handler处理1类事件（例如 ErrorEvent）对应多个监听函数
+    // 1. 模板 T 是 Emitter 的子类。
+    // 2. 模板 E 是 事件。
     template<typename E>
     struct Handler final: BaseHandler {
+        // 定义自定义类型。
         using Listener = std::function<void(E &, T &)>;
         using Element = std::pair<bool, Listener>;
         using ListenerList = std::list<Element>;
@@ -134,6 +138,7 @@ class Emitter {
 
         // 发布 1 个事件，执行对应的事件监听函数
         void publish(E event, T &ref) {
+            // 将 onceL 置为空
             ListenerList currentL;
             onceL.swap(currentL);
 
@@ -157,7 +162,7 @@ class Emitter {
         ListenerList onL{};
     };
 
-    // handler 函数，指定 1 个类型
+    // handler 函数，返回 1 个 handler。
     template<typename E>
     Handler<E> &handler() noexcept {
         auto id = type<E>();
@@ -178,8 +183,12 @@ protected:
 
 public:
     template<typename E>
+    // C++11使用using定义类型的别名（替代typedef）。这里需要加 typename 的原因是 Listener 是类内部的类型（所以它有可能是成员）
+    // https://stackoverflow.com/questions/1600936/officially-what-is-typename-for
     using Listener = typename Handler<E>::Listener;
 
+    // Connection 代表 ListenerList::iterator。std::list<Element>;
+    // Connection conn 时， *conn 能够获取到元素
     /**
      * @brief Connection type for a given event type.
      *
@@ -199,6 +208,7 @@ public:
         Connection(typename Handler<E>::Connection conn)
             : Handler<E>::Connection{std::move(conn)} {}
 
+        // 赋值构造函数
         Connection &operator=(const Connection &) = default;
         Connection &operator=(Connection &&) = default;
     };
@@ -207,6 +217,7 @@ public:
         static_assert(std::is_base_of_v<Emitter<T>, T>);
     }
 
+    // on 给 list 添加数据
     /**
      * @brief Registers a long-lived listener with the event emitter.
      *
@@ -227,6 +238,7 @@ public:
         return handler<E>().on(std::move(f));
     }
 
+    // 执行 1 次的 Listener
     /**
      * @brief Registers a short-lived listener with the event emitter.
      *

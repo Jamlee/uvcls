@@ -61,6 +61,8 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "cassert": "cpp"
+        "cassert": "cpp",
+        "wait.h": "c",
+        "pthread.h": "c"
     }
 }
