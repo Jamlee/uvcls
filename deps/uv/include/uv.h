@@ -186,6 +186,7 @@ typedef enum {
   UV_ERRNO_MAX = UV__EOF - 1
 } uv_errno_t;
 
+// JAMLEE: 枚举 handle 类型
 typedef enum {
   UV_UNKNOWN_HANDLE = 0,
 #define XX(uc, lc) UV_##uc,

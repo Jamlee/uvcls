@@ -64,5 +64,7 @@
         "cassert": "cpp",
         "wait.h": "c",
         "pthread.h": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Disabled",
+    "esbonio.sphinx.confDir": ""
 }

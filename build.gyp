@@ -2,10 +2,11 @@
     "target_defaults": {
         "include_dirs": ["deps/uv/include", "src/lib"],
         "sources": [
+            "src/lib/config.h",
             "src/lib/emitter.hpp",
-            "src/lib/type_info.hpp",
-            "src/lib/util.hpp",
             "src/lib/loop.hpp",
+            "src/lib/handle.hpp",
+            "src/lib/idle.hpp",
         ],
         "dependencies": ["deps/uv/uv.gyp:libuv"],
     },
@@ -29,10 +30,9 @@
             "sources": [
                 "test/googletest/src/gtest_main.cc",
                 "test/googletest/src/gtest-all.cc",
-                "test/type_info.cc",
                 "test/emitter.cc",
-                "test/util.cc",
                 "test/loop.cc",
+                "test/handle.cc",
             ],
         },
     ],

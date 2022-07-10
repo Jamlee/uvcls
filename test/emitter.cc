@@ -196,3 +196,12 @@ TEST(Emitter, OnMutipleTypeEvent) {
     emitter.emitClose();
     emitter.emitData();
 }
+
+class HelloWorld {};
+
+TEST(type_info, type) {
+  auto id = uvcls::type<HelloWorld>();
+  // std::cout << id << std::endl;
+  // std::cout << __PRETTY_FUNCTION__ << std::endl;
+  EXPECT_EQ(id, 3269991986);
+}
