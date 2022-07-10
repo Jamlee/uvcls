@@ -73,9 +73,10 @@ class Handle: public Resource<T, U> {
 public:
     using Resource<T, U>::Resource;
 
-    // this->template 是因为 Handle 继承了模板类。
+    // this->template 是因为 Handle 继承了模板类。close 时，事件循环为 close 阶段执行
     void close() noexcept {
         if(!closing()) {
+            // 关闭 handle 时调用回调地址, 类的成员函数需要 & 符号（不像C 函数名就是指针）
             uv_close(this->template get<uv_handle_t>(), &Handle<T, U>::closeCallback);
         }
     }
@@ -85,6 +86,7 @@ public:
     }
 
 protected:
+    // 关闭 handle 时调用的回调
     static void closeCallback(uv_handle_t *handle) {
         Handle<T, U> &ref = *(static_cast<T *>(handle->data));
         [[maybe_unused]] auto ptr = ref.shared_from_this();

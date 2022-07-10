@@ -115,7 +115,7 @@ uint64_t uv_hrtime(void) {
   return uv__hrtime(UV_CLOCK_PRECISE);
 }
 
-
+// 关闭 handle 是 handle 的通用操作
 void uv_close(uv_handle_t* handle, uv_close_cb close_cb) {
   assert(!uv__is_closing(handle));
 
@@ -244,7 +244,7 @@ int uv__getiovmax(void) {
 #endif
 }
 
-
+// JAMLEE: close 完毕之后调用回调函数
 static void uv__finish_close(uv_handle_t* handle) {
   /* Note: while the handle is in the UV_HANDLE_CLOSING state now, it's still
    * possible for it to be active in the sense that uv__is_active() returns
