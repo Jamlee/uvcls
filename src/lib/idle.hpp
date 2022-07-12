@@ -8,6 +8,9 @@ namespace uvcls {
 
 struct IdleEvent {};
 
+/*
+当 uv_idle_start 时，传入 1 个回调函数。在 idle 阶段运行
+*/
 class IdleHandle final: public Handle<IdleHandle, uv_idle_t> {
 
     static void startCallback(uv_idle_t *handle);

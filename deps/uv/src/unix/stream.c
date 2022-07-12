@@ -590,7 +590,7 @@ void uv__server_io(uv_loop_t* loop, uv__io_t* w, unsigned int events) {
 
 #undef UV_DEC_BACKLOG
 
-
+// JAMLEE: uv_accept 接收 2 个参数： server 和 client 两个 handle
 int uv_accept(uv_stream_t* server, uv_stream_t* client) {
   int err;
 
@@ -655,7 +655,7 @@ done:
   return err;
 }
 
-
+// JAMLEE: uv_listen 监听 1 个 stream
 int uv_listen(uv_stream_t* stream, int backlog, uv_connection_cb cb) {
   int err;
 
@@ -678,7 +678,7 @@ int uv_listen(uv_stream_t* stream, int backlog, uv_connection_cb cb) {
   return err;
 }
 
-
+// JAMLEE: 数据先写入到 buf 中。用这个函数 flush 数据出去
 static void uv__drain(uv_stream_t* stream) {
   uv_shutdown_t* req;
   int err;

@@ -20,3 +20,15 @@ TEST(Idle, Run) {
     idle->start();
     loop->run();
 }
+
+TEST(TCP, Functionalities) {
+    auto loop = uvcls::Loop::getDefault();
+    auto handle = loop->resource<uvw::TCPHandle>();
+
+    ASSERT_TRUE(handle->noDelay(true));
+    ASSERT_TRUE(handle->keepAlive(true, uvw::TCPHandle::Time{128}));
+    ASSERT_TRUE(handle->simultaneousAccepts());
+
+    handle->close();
+    loop->run();
+}
