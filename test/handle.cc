@@ -38,7 +38,7 @@ TEST(Stream, Demo) {
 TEST(TCP, Functionalities) {
     auto loop = uvcls::Loop::getDefault();
     auto tcp = std::make_shared<uvcls::TCPHandle>(loop->shared_from_this(), 0);
-
+    tcp->init();
     ASSERT_TRUE(tcp->noDelay(true));
     ASSERT_TRUE(tcp->keepAlive(true, uvcls::TCPHandle::Time{128}));
     ASSERT_TRUE(tcp->simultaneousAccepts());

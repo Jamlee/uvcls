@@ -17,7 +17,7 @@
         {
             "target_name": "netserver",
             "type": "executable",
-            "cflags": ['-std=c++17'],
+            "cflags": ['-std=c++17', '-g', '-O0'],
             "sources": [
                 "src/main.cc",
             ],
@@ -25,7 +25,7 @@
         {
             "target_name": "cctest",
             "type": "executable",
-            "cflags": ['-std=c++17'],
+            "cflags": ['-std=c++17', '-g', '-O0'],
             "include_dirs": [
                 "test/googletest/include",
                 "test/googletest",

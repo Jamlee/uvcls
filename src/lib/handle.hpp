@@ -17,11 +17,13 @@ public:
     explicit UnderlyingType(std::shared_ptr<Loop> ref) noexcept
         : pLoop{std::move(ref)}, resource{} {}
 
+    // 取出当前底层资源，例如 uv_tcp_t
     template<typename R = U>
     auto get() noexcept {
         return reinterpret_cast<R *>(&resource);
     }
 
+    // 取出当前底层资源，例如 uv_tcp_t
     template<typename R = U>
     auto get() const noexcept {
         return reinterpret_cast<const R *>(&resource);
