@@ -33,7 +33,7 @@ public:
 
 private:
     std::shared_ptr<Loop> pLoop;
-    U resource; // T 代表 UnderlyingType, U 代表类似 uv_idle_type 类型
+    U resource; // T 代表 UnderlyingType, U 代表类似 uv_idle_t 类型
 };
 
 template<typename T, typename U>
