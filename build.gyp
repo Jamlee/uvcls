@@ -9,7 +9,6 @@
             "src/lib/idle.hpp",
             "src/lib/request.hpp",
             "src/lib/stream.hpp",
-            "src/lib/tcp.hpp",
         ],
         "dependencies": ["deps/uv/uv.gyp:libuv"],
     },

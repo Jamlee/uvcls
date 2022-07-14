@@ -2,8 +2,8 @@
 #include <iostream>
 #include "gtest/gtest.h"
 #include "idle.hpp"
-#include "tcp.hpp"
-
+#include "request.hpp"
+#include "stream.hpp"
 
 TEST(Idle, Run) {
     auto loop = uvcls::Loop::getDefault();
@@ -22,12 +22,24 @@ TEST(Idle, Run) {
     loop->run();
 }
 
-TEST(TCP, Functionalities) {
+TEST(Request, Demo) {
     auto loop = uvcls::Loop::getDefault();
-    auto tcp = std::make_shared<uvcls::TCPHandle>(loop, 0);
-    // ASSERT_TRUE(tcp->noDelay(true));
-    // ASSERT_TRUE(tcp->keepAlive(true, uvcls::TCPHandle::Time{128}));
-    // ASSERT_TRUE(tcp->simultaneousAccepts());
-    tcp->close();
+    auto tcp = std::make_shared<uvcls::Request>(loop);
     loop->run();
 }
+
+TEST(Stream, Demo) {
+    auto loop = uvcls::Loop::getDefault();
+    auto tcp = std::make_shared<uvcls::StreamHandle>(loop);
+    loop->run();
+}
+
+// TEST(TCP, Functionalities) {
+//     auto loop = uvcls::Loop::getDefault();
+//     auto tcp = std::make_shared<uvcls::TCPHandle>(loop, 0);
+//     ASSERT_TRUE(tcp->noDelay(true));
+//     ASSERT_TRUE(tcp->keepAlive(true, uvcls::TCPHandle::Time{128}));
+//     ASSERT_TRUE(tcp->simultaneousAccepts());
+//     tcp->close();
+//     loop->run();
+// }
