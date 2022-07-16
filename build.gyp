@@ -10,6 +10,7 @@
             "src/lib/request.hpp",
             "src/lib/stream.hpp",
             "src/lib/tcp.hpp",
+            "src/lib/util.hpp",
         ],
         "dependencies": ["deps/uv/uv.gyp:libuv"],
     },

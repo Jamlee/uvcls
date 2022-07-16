@@ -91,6 +91,7 @@ typedef void (*uv__io_cb)(struct uv_loop_s* loop,
                           unsigned int events);
 typedef struct uv__io_s uv__io_t;
 
+// JAMLEE: io_watcher。和其他 io_wacher 组成双向链表
 struct uv__io_s {
   uv__io_cb cb;
   void* pending_queue[2];

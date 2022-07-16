@@ -2,6 +2,7 @@
 #define UVCLS_TCP_INCLUDE_H
 
 #include "stream.hpp"
+#include "util.hpp"
 #include "config.h"
 
 namespace uvcls {
@@ -10,7 +11,7 @@ enum class UVTCPFlags : std::underlying_type_t<uv_tcp_flags> {
     IPV6ONLY = UV_TCP_IPV6ONLY
 };
 
-static constexpr std::size_t DEFAULT_SIZE = 128;
+static constexpr std::size_t DEFAULT_SIZE = 1024;
 
 struct IPv4 {};
 
@@ -19,121 +20,6 @@ struct IPv6 {};
 struct Addr {
     std::string ip;    /*!< Either an IPv4 or an IPv6. */
     unsigned int port; /*!< A valid service identifier. */
-};
-
-template<typename E>
-class Flags final {
-    static_assert(std::is_enum_v<E>);
-
-    using InnerType = std::underlying_type_t<E>;
-
-    constexpr InnerType toInnerType(E flag) const noexcept {
-        return static_cast<InnerType>(flag);
-    }
-
-public:
-    using Type = InnerType;
-
-    /**
-     * @brief Utility factory method to pack a set of values all at once.
-     * @return A valid instance of Flags instantiated from values `V`.
-     */
-    template<E... V>
-    static constexpr Flags<E> from() {
-        return (Flags<E>{} | ... | V);
-    }
-
-    /**
-     * @brief Constructs a Flags object from a value of the enum `E`.
-     * @param flag A value of the enum `E`.
-     */
-    constexpr Flags(E flag) noexcept
-        : flags{toInnerType(flag)} {}
-
-    /**
-     * @brief Constructs a Flags object from an instance of the underlying type
-     * of the enum `E`.
-     * @param f An instance of the underlying type of the enum `E`.
-     */
-    constexpr Flags(Type f)
-        : flags{f} {}
-
-    /**
-     * @brief Constructs an uninitialized Flags object.
-     */
-    constexpr Flags()
-        : flags{} {}
-
-    constexpr Flags(const Flags &f) noexcept
-        : flags{f.flags} {}
-
-    constexpr Flags(Flags &&f) noexcept
-        : flags{std::move(f.flags)} {}
-
-    constexpr Flags &operator=(const Flags &f) noexcept {
-        flags = f.flags;
-        return *this;
-    }
-
-    constexpr Flags &operator=(Flags &&f) noexcept {
-        flags = std::move(f.flags);
-        return *this;
-    }
-
-    /**
-     * @brief Or operator.
-     * @param f A valid instance of Flags.
-     * @return This instance _or-ed_ with `f`.
-     */
-    constexpr Flags operator|(const Flags &f) const noexcept {
-        return Flags{flags | f.flags};
-    }
-
-    /**
-     * @brief Or operator.
-     * @param flag A value of the enum `E`.
-     * @return This instance _or-ed_ with `flag`.
-     */
-    constexpr Flags operator|(E flag) const noexcept {
-        return Flags{flags | toInnerType(flag)};
-    }
-
-    /**
-     * @brief And operator.
-     * @param f A valid instance of Flags.
-     * @return This instance _and-ed_ with `f`.
-     */
-    constexpr Flags operator&(const Flags &f) const noexcept {
-        return Flags{flags & f.flags};
-    }
-
-    /**
-     * @brief And operator.
-     * @param flag A value of the enum `E`.
-     * @return This instance _and-ed_ with `flag`.
-     */
-    constexpr Flags operator&(E flag) const noexcept {
-        return Flags{flags & toInnerType(flag)};
-    }
-
-    /**
-     * @brief Checks if this instance is initialized.
-     * @return False if it's uninitialized, true otherwise.
-     */
-    explicit constexpr operator bool() const noexcept {
-        return !(flags == InnerType{});
-    }
-
-    /**
-     * @brief Casts the instance to the underlying type of `E`.
-     * @return An integral representation of the contained flags.
-     */
-    constexpr operator Type() const noexcept {
-        return flags;
-    }
-
-private:
-    InnerType flags;
 };
 
 // 对 libuv 用到的类型做封装 uv_handle_type, uv_file, uv_os_fd_t 等
@@ -190,7 +76,6 @@ struct IpTraits<IPv6> {
     }
 };
 
-
 template<typename I>
 Addr address(const typename IpTraits<I>::Type *aptr) noexcept {
     Addr addr{};
@@ -222,6 +107,7 @@ Addr address(F &&f, const H *handle) noexcept {
     return addr;
 }
 
+// 类型包装，可以获取到其内部的值
 using OSSocketHandle = UVTypeWrapper<uv_os_sock_t>;
 
 class TCPHandle final: public StreamHandle<TCPHandle, uv_tcp_t> {
@@ -270,7 +156,7 @@ private:
     enum {
         DEFAULT,
         FLAGS
-    } tag;
+    } tag; // 判断是否使用 flag。FLAGS 注意不要和 flag 搞混淆了
 
     // flags 配置用途，不是简简单单的 1 个 int
     unsigned int flags;

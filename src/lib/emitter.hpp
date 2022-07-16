@@ -202,6 +202,7 @@ class Emitter {
             ListenerList currentL;
             onceL.swap(currentL);
 
+            // 事件会将 event 和 event 的 emitter 传给处理函数
             auto func = [&event, &ref](auto &&element) {
                 return element.first ? void() : element.second(event, ref);
             };

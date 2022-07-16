@@ -325,7 +325,15 @@ int uv_tcp_close_reset(uv_tcp_t* handle, uv_close_cb close_cb) {
   return 0;
 }
 
-// JAMLEE: 对 handle 做操作
+// JAMLEE: 对 handle 类型的 uv_tcp_t, 执行监听操作。常规来说会有伪代码：
+// listen(sockfd, 2)
+// while(1)
+// {	
+//    ...
+//    accept(sockfd)
+//    ...
+// }
+// 但是这里 listen 后将 socketfd 防止到 io watcher 中
 int uv_tcp_listen(uv_tcp_t* tcp, int backlog, uv_connection_cb cb) {
   static int single_accept = -1;
   unsigned long flags;

@@ -121,9 +121,12 @@ public:
         this->invoke(&uv_listen, this->template get<uv_stream_t>(), backlog, &listenCallback);
     }
 
+    // 获取底层 this->template get<uv_stream_t>() 的底层 uv_stream_t
     template<typename S>
     void accept(S &ref) {
-        this->invoke(&uv_accept, this->template get<uv_stream_t>(), this->template get<uv_stream_t>(ref));
+        auto serverTcp = this->template get<uv_stream_t>();
+        auto clientTcp = this->template get<uv_stream_t>(ref);
+        this->invoke(&uv_accept, serverTcp, clientTcp);
     }
 
     void read() {

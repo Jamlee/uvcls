@@ -29,6 +29,12 @@ public:
         return reinterpret_cast<const R *>(&resource);
     }
 
+    // 获取其他底层资源的指针
+    template<typename R, typename... P>
+    auto get(UnderlyingType<P...> &other) noexcept {
+        return reinterpret_cast<R *>(&other.resource);
+    }
+
     Loop &loop() const noexcept {
         return *pLoop;
     }
