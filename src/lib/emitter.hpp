@@ -169,23 +169,23 @@ class Emitter {
         FuncList onL{};
     };
 
-    // handler 函数，返回 1 个 handler。
+    // listener 函数，返回1个listener。每个Event类型E对应1个Listener，1个Listener对应多个Func。
     template <typename E>
-    Listener<E> &handler() noexcept {
+    Listener<E> &listener() noexcept {
         auto id = type<E>();
 
-        // 如果没有这个类型的 handlers, 创建新的 handler 对象
-        if (!handlers.count(id)) {
-            handlers[id] = std::make_unique<Listener<E>>();
+        // 如果没有这个类型的 listeners, 创建新的 listener 对象
+        if (!listeners.count(id)) {
+            listeners[id] = std::make_unique<Listener<E>>();
         }
 
-        return static_cast<Listener<E> &>(*handlers.at(id));
+        return static_cast<Listener<E> &>(*listeners.at(id));
     }
 
    protected:
     template <typename E>
     void publish(E event) {
-        handler<E>().publish(std::move(event), *static_cast<T *>(this));
+        listener<E>().publish(std::move(event), *static_cast<T *>(this));
     }
 
    public:
@@ -217,44 +217,44 @@ class Emitter {
         static_assert(std::is_base_of_v<Emitter<T>, T>);
     }
 
-    // on 给 list 添加数据
+    // on 给 Listener的 FuncList 添加数据
     template <typename E>
     Index<E> on(Func<E> f) {
-        return handler<E>().on(std::move(f));
+        return listener<E>().on(std::move(f));
     }
 
-    // 执行 1 次的 Func
+    // on 给 Listener的 FuncList 添加数据（事件仅执行1次）。
     template <typename E>
     Index<E> once(Func<E> f) {
-        return handler<E>().once(std::move(f));
+        return listener<E>().once(std::move(f));
     }
 
     template <typename E>
-    void erase(Index<E> conn) noexcept {
-        handler<E>().erase(std::move(conn));
+    void erase(Index<E> index) noexcept {
+        listener<E>().erase(std::move(index));
     }
 
     template <typename E>
     void clear() noexcept {
-        handler<E>().clear();
+        listener<E>().clear();
     }
 
     void clear() noexcept {
-        std::for_each(handlers.begin(), handlers.end(), [](auto &&hdlr) { if(hdlr.second) { hdlr.second->clear(); } });
+        std::for_each(listeners.begin(), listeners.end(), [](auto &&hdlr) { if(hdlr.second) { hdlr.second->clear(); } });
     }
 
     template <typename E>
     bool empty() const noexcept {
         auto id = type<E>();
-        return (!handlers.count(id) || static_cast<Listener<E> &>(*handlers.at(id)).empty());
+        return (!listeners.count(id) || static_cast<Listener<E> &>(*listeners.at(id)).empty());
     }
 
     bool empty() const noexcept {
-        return std::all_of(handlers.cbegin(), handlers.cend(), [](auto &&hdlr) { return !hdlr.second || hdlr.second->empty(); });
+        return std::all_of(listeners.cbegin(), listeners.cend(), [](auto &&hdlr) { return !hdlr.second || hdlr.second->empty(); });
     }
 
    private:
-    std::unordered_map<std::uint32_t, std::unique_ptr<BaseListener>> handlers{};
+    std::unordered_map<std::uint32_t, std::unique_ptr<BaseListener>> listeners{};
 };
 
 UVCLS_INLINE int ErrorEvent::translate(int sys) noexcept {
