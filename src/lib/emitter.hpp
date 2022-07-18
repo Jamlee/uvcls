@@ -88,22 +88,22 @@ struct ErrorEvent {
 template <typename T>
 class Emitter {
     // 用于作为父类 std::unordered_map 的存储对象，这里的虚析构函数用于析构子类对象。
-    struct BaseHandler {
-        virtual ~BaseHandler() noexcept = default;
+    struct BaseListener {
+        virtual ~BaseListener() noexcept = default;
         virtual bool empty() const noexcept = 0;
         virtual void clear() noexcept = 0;
     };
 
-    // 内部类，事件发射后，对应的处理类。1个Handler处理1类事件（例如 ErrorEvent）对应多个监听函数
+    // 内部类，事件发射后，对应的处理类。1个Listener处理1类事件（例如 ErrorEvent）对应多个监听函数
     // 1. 模板 T 是 Emitter 的子类。
     // 2. 模板 E 是 事件。
     template <typename E>
-    struct Handler final : BaseHandler {
+    struct Listener final : BaseListener {
         // 定义自定义类型。
-        using Listener = std::function<void(E &, T &)>;
-        using Element = std::pair<bool, Listener>;
-        using ListenerList = std::list<Element>;
-        using Index = typename ListenerList::iterator;
+        using Func = std::function<void(E &, T &)>;
+        using Element = std::pair<bool, Func>;
+        using FuncList = std::list<Element>;
+        using Index = typename FuncList::iterator;
 
         bool empty() const noexcept override {
             auto pred = [](auto &&element) { return element.first; };
@@ -123,12 +123,12 @@ class Emitter {
         }
 
         // 一次性的监听事件
-        Index once(Listener f) {
+        Index once(Func f) {
             return onceL.emplace(onceL.cend(), false, std::move(f));
         }
 
         // 持久性的监听事件
-        Index on(Listener f) {
+        Index on(Func f) {
             return onL.emplace(onL.cend(), false, std::move(f));
         }
 
@@ -145,7 +145,7 @@ class Emitter {
         // 发布 1 个事件，执行对应的事件监听函数
         void publish(E event, T &ref) {
             // 将 onceL 置为空
-            ListenerList currentL;
+            FuncList currentL;
             onceL.swap(currentL);
 
             // 事件会将 event 和 event 的 emitter 传给处理函数。element.first 因为这里是 std::pair
@@ -165,21 +165,21 @@ class Emitter {
 
        private:
         bool publishing{false};
-        ListenerList onceL{};
-        ListenerList onL{};
+        FuncList onceL{};
+        FuncList onL{};
     };
 
     // handler 函数，返回 1 个 handler。
     template <typename E>
-    Handler<E> &handler() noexcept {
+    Listener<E> &handler() noexcept {
         auto id = type<E>();
 
         // 如果没有这个类型的 handlers, 创建新的 handler 对象
         if (!handlers.count(id)) {
-            handlers[id] = std::make_unique<Handler<E>>();
+            handlers[id] = std::make_unique<Listener<E>>();
         }
 
-        return static_cast<Handler<E> &>(*handlers.at(id));
+        return static_cast<Listener<E> &>(*handlers.at(id));
     }
 
    protected:
@@ -190,14 +190,14 @@ class Emitter {
 
    public:
     template <typename E>
-    // C++11使用using定义类型的别名（替代typedef）。这里需要加 typename 的原因是 Listener 是类内部的类型（所以它有可能是成员）
+    // C++11使用using定义类型的别名（替代typedef）。这里需要加 typename 的原因是 Func 是类内部的类型（所以它有可能是成员）
     // https://stackoverflow.com/questions/1600936/officially-what-is-typename-for
-    using Listener = typename Handler<E>::Listener;
+    using Func = typename Listener<E>::Func;
 
-    // Index 代表 ListenerList::iterator。std::list<Element>;
+    // Index 代表 FuncList::iterator。std::list<Element>;
     // Index *conn 能够获取到元素
     template <typename E>
-    struct Index : private Handler<E>::Index {
+    struct Index : private Listener<E>::Index {
         template <typename>
         friend class Emitter;
 
@@ -205,8 +205,8 @@ class Emitter {
         Index(const Index &) = default;
         Index(Index &&) = default;
 
-        Index(typename Handler<E>::Index conn)
-            : Handler<E>::Index{std::move(conn)} {}
+        Index(typename Listener<E>::Index conn)
+            : Listener<E>::Index{std::move(conn)} {}
 
         // 赋值构造函数
         Index &operator=(const Index &) = default;
@@ -219,13 +219,13 @@ class Emitter {
 
     // on 给 list 添加数据
     template <typename E>
-    Index<E> on(Listener<E> f) {
+    Index<E> on(Func<E> f) {
         return handler<E>().on(std::move(f));
     }
 
-    // 执行 1 次的 Listener
+    // 执行 1 次的 Func
     template <typename E>
-    Index<E> once(Listener<E> f) {
+    Index<E> once(Func<E> f) {
         return handler<E>().once(std::move(f));
     }
 
@@ -246,8 +246,7 @@ class Emitter {
     template <typename E>
     bool empty() const noexcept {
         auto id = type<E>();
-
-        return (!handlers.count(id) || static_cast<Handler<E> &>(*handlers.at(id)).empty());
+        return (!handlers.count(id) || static_cast<Listener<E> &>(*handlers.at(id)).empty());
     }
 
     bool empty() const noexcept {
@@ -255,7 +254,7 @@ class Emitter {
     }
 
    private:
-    std::unordered_map<std::uint32_t, std::unique_ptr<BaseHandler>> handlers{};
+    std::unordered_map<std::uint32_t, std::unique_ptr<BaseListener>> handlers{};
 };
 
 UVCLS_INLINE int ErrorEvent::translate(int sys) noexcept {
