@@ -7,7 +7,6 @@
             "src/lib/loop.hpp",
             "src/lib/handle.hpp",
             "src/lib/idle.hpp",
-            "src/lib/request.hpp",
             "src/lib/stream.hpp",
             "src/lib/tcp.hpp",
             "src/lib/util.hpp",

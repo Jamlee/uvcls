@@ -1,12 +1,14 @@
 #ifndef UVCLS_LOOP_INCLUDE_H
 #define UVCLS_LOOP_INCLUDE_H
 
+#include <uv.h>
+
 #include <chrono>
 #include <functional>
 #include <memory>
 #include <type_traits>
 #include <utility>
-#include <uv.h>
+
 #include "emitter.hpp"
 
 namespace uvcls {
@@ -22,14 +24,14 @@ enum class UVLoopOption : std::underlying_type_t<uv_loop_option> {
     BLOCK_SIGNAL = UV_LOOP_BLOCK_SIGNAL,
 };
 
-class Loop final: public Emitter<Loop>, public std::enable_shared_from_this<Loop> {
+class Loop final : public Emitter<Loop>, public std::enable_shared_from_this<Loop> {
     // 释放 uv_loop_t 占的空间
     using Deleter = void (*)(uv_loop_t *);
 
-    template<typename, typename>
+    template <typename, typename>
     friend class Resource;
 
-public:
+   public:
     // 获取 Loop 类默认实例
     static std::shared_ptr<Loop> getDefault();
 
@@ -39,12 +41,12 @@ public:
 
     void close();
 
-    template<UVRunMode mode = UVRunMode::DEFAULT>
+    template <UVRunMode mode = UVRunMode::DEFAULT>
     bool run() noexcept;
 
     void stop() noexcept;
 
-private:
+   private:
     std::unique_ptr<uv_loop_t, Deleter> loop;
     std::shared_ptr<void> userData{nullptr};
 };
@@ -54,9 +56,9 @@ UVCLS_INLINE std::shared_ptr<Loop> Loop::getDefault() {
     static std::weak_ptr<Loop> ref;
     std::shared_ptr<Loop> loop;
 
-    if(ref.expired()) {
+    if (ref.expired()) {
         auto def = uv_default_loop();
-        if(def) {
+        if (def) {
             auto ptr = std::unique_ptr<uv_loop_t, Deleter>(def, [](uv_loop_t *) {});
             loop = std::shared_ptr<Loop>{new Loop{std::move(ptr)}};
         }
@@ -68,7 +70,7 @@ UVCLS_INLINE std::shared_ptr<Loop> Loop::getDefault() {
     return loop;
 }
 
-template<UVRunMode mode>
+template <UVRunMode mode>
 bool Loop::run() noexcept {
     auto utm = static_cast<std::underlying_type_t<UVRunMode>>(mode);
     auto uvrm = static_cast<uv_run_mode>(utm);
@@ -88,11 +90,11 @@ UVCLS_INLINE Loop::Loop(std::unique_ptr<uv_loop_t, Deleter> ptr) noexcept
     : loop{std::move(ptr)} {}
 
 UVCLS_INLINE Loop::~Loop() noexcept {
-    if(loop) {
+    if (loop) {
         close();
     }
 }
 
-}
+}  // namespace uvcls
 
 #endif

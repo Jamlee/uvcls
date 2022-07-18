@@ -2,7 +2,6 @@
 #include <iostream>
 #include "gtest/gtest.h"
 #include "idle.hpp"
-#include "request.hpp"
 #include "stream.hpp"
 #include "tcp.hpp"
 

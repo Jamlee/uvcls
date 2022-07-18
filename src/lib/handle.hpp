@@ -10,6 +10,7 @@ namespace uvcls {
 
 struct CloseEvent {};
 
+// UnderlyingType 表示底层的Loop类和libuv的handle, req 资源。
 template<typename T, typename U>
 class UnderlyingType {
 
@@ -84,7 +85,7 @@ public:
     // this->template 是因为 Handle 继承了模板类。close 时，事件循环为 close 阶段执行
     void close() noexcept {
         if(!closing()) {
-            // 关闭 handle 时调用回调地址, 类的成员函数需要 & 符号（不像C 函数名就是指针）
+            // 关闭 handle 时调用回调地址, 类的成员函数指针需要 & 符号（不像C 函数名就是指针）
             uv_close(this->template get<uv_handle_t>(), &Handle<T, U>::closeCallback);
         }
     }
@@ -123,6 +124,52 @@ protected:
             }
         }
         return this->self();
+    }
+};
+
+
+// Req 类型（另一种是 handle）
+template<typename T, typename U>
+class Request: public Resource<T, U> {
+protected:
+    static auto reserve(U *req) {
+        auto ptr = static_cast<T *>(req->data)->shared_from_this();
+        ptr->reset();
+        return ptr;
+    }
+
+    template<typename E>
+    static void defaultCallback(U *req, int status) {
+        if(auto ptr = reserve(req); status) {
+            ptr->publish(ErrorEvent{status});
+        } else {
+            ptr->publish(E{});
+        }
+    }
+
+    template<typename F, typename... Args>
+    auto invoke(F &&f, Args &&...args) {
+        if constexpr(std::is_void_v<std::invoke_result_t<F, Args...>>) {
+            std::forward<F>(f)(std::forward<Args>(args)...);
+            this->leak();
+        } else {
+            if(auto err = std::forward<F>(f)(std::forward<Args>(args)...); err) {
+                Emitter<T>::publish(ErrorEvent{err});
+            } else {
+                this->leak();
+            }
+        }
+    }
+
+public:
+    using Resource<T, U>::Resource;
+
+    bool cancel() {
+        return (0 == uv_cancel(this->template get<uv_req_t>()));
+    }
+
+    std::size_t size() const noexcept {
+        return uv_req_size(this->template get<uv_req_t>()->type);
     }
 };
 
