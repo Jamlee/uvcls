@@ -1,7 +1,7 @@
 #ifndef UVCLS_STREAM_INCLUDE_H
 #define UVCLS_STREAM_INCLUDE_H
-#include <uv.h>
-
+#include <memory>
+#include "uv.h"
 #include "config.h"
 #include "handle.hpp"
 
@@ -16,10 +16,15 @@ Stream 统一封装的流操作接口。不可以理解成是 TCP 继承了 Stre
 namespace uvcls {
 
 struct ConnectEvent {};
+
 struct EndEvent {};
+
 struct ListenEvent {};
+
 struct ShutdownEvent {};
+
 struct WriteEvent {};
+
 struct DataEvent {
     explicit DataEvent(std::unique_ptr<char[]> buf, std::size_t len) noexcept;
 
@@ -44,11 +49,9 @@ struct ShutdownReq final : public Request<ShutdownReq, uv_shutdown_t> {
 
 template <typename Deleter>
 class WriteReq final : public Request<WriteReq<Deleter>, uv_write_t> {
-    using ConstructorAccess = typename Request<WriteReq<Deleter>, uv_write_t>::ConstructorAccess;
-
    public:
-    WriteReq(ConstructorAccess ca, std::shared_ptr<Loop> loop, std::unique_ptr<char[], Deleter> dt, unsigned int len)
-        : Request<WriteReq<Deleter>, uv_write_t>{ca, std::move(loop)},
+    WriteReq(std::shared_ptr<Loop> loop, std::unique_ptr<char[], Deleter> dt, unsigned int len)
+        : Request<WriteReq<Deleter>, uv_write_t>{std::move(loop)},
           data{std::move(dt)},
           buf{uv_buf_init(data.get(), len)} {}
 
@@ -102,11 +105,13 @@ class StreamHandle : public Handle<T, U> {
 
    public:
     using Handle<T, U>::Handle;
+    using NullDeleter = void (*)(char *);
 
     void shutdown() {
         auto listener = [ptr = this->shared_from_this()](const auto &event, const auto &) {
             ptr->publish(event);
         };
+        auto req = std::make_shared<ShutdownReq>(this->loop().shared_from_this());
         auto shutdown = this->loop().template resource<ShutdownReq>();
         shutdown->template once<ErrorEvent>(listener);
         shutdown->template once<ShutdownEvent>(listener);
@@ -125,13 +130,15 @@ class StreamHandle : public Handle<T, U> {
         this->invoke(&uv_accept, serverTcp, clientTcp);
     }
 
+    // 当前的连接已经 accpet 之后。执行 uv_read_start, 新的 fd 的 io watcher 开始监听
     void read() {
         this->invoke(&uv_read_start, this->template get<uv_stream_t>(), &this->allocCallback, &readCallback);
     }
 
+    // write 时，即时创建 1 个 WriteReq对象。
     template <typename Deleter>
     void write(std::unique_ptr<char[], Deleter> data, unsigned int len) {
-        auto req = this->loop().template resource<WriteReq<Deleter>>(std::move(data), len);
+        auto req = std::make_shared<WriteReq<Deleter>>(this->loop().shared_from_this(), std::move(data), len);
         auto listener = [ptr = this->shared_from_this()](const auto &event, const auto &) {
             ptr->publish(event);
         };
@@ -141,20 +148,22 @@ class StreamHandle : public Handle<T, U> {
         req->write(this->template get<uv_stream_t>());
     }
 
+    // 注意这里的 std::move(reqData), unqiue 赋值要注意
     void write(char *data, unsigned int len) {
-        auto req = this->loop().template resource<WriteReq<void (*)(char *)>>(std::unique_ptr<char[], void (*)(char *)>{data, [](char *) {}}, len);
+        auto reqData  = std::unique_ptr<char[], NullDeleter>{data, [](char*) {}};
+        auto req = std::make_shared<WriteReq<NullDeleter>>(this->loop().shared_from_this(), std::move(reqData), len);
         auto listener = [ptr = this->shared_from_this()](const auto &event, const auto &) {
             ptr->publish(event);
         };
-
         req->template once<ErrorEvent>(listener);
         req->template once<WriteEvent>(listener);
         req->write(this->template get<uv_stream_t>());
     }
 
+    // 注意这里捕获的写法 [ptr = this->shared_from_this()]
     template <typename S, typename Deleter>
     void write(S &send, std::unique_ptr<char[], Deleter> data, unsigned int len) {
-        auto req = this->loop().template resource<WriteReq<Deleter>>(std::move(data), len);
+        auto req = std::make_shared<WriteReq<Deleter>>(this->loop().shared_from_this(), std::move(data), len);
         auto listener = [ptr = this->shared_from_this()](const auto &event, const auto &) {
             ptr->publish(event);
         };
@@ -164,9 +173,11 @@ class StreamHandle : public Handle<T, U> {
         req->write(this->template get<uv_stream_t>(), this->template get<uv_stream_t>(send));
     }
 
+    // 当写入事件时, 会触发到当前 TcpHandle 的 WriteEvent 事件
     template <typename S>
     void write(S &send, char *data, unsigned int len) {
-        auto req = this->loop().template resource<WriteReq<void (*)(char *)>>(std::unique_ptr<char[], void (*)(char *)>{data, [](char *) {}}, len);
+        auto reqData = std::unique_ptr<char[], NullDeleter>{data, [](char*) {}};
+        auto req = std::make_shared<WriteReq<NullDeleter>>(this->loop().shared_from_this(), std::move(data), len);
         auto listener = [ptr = this->shared_from_this()](const auto &event, const auto &) {
             ptr->publish(event);
         };

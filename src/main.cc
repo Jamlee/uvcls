@@ -1,4 +1,6 @@
 #include <iostream>
+#include <cstring>
+#include <string>
 #include "tcp.hpp"
 
 int main()
@@ -29,6 +31,8 @@ int main()
                 std::cout << data.data[i];
             }
             std::cout << std::endl;
+            char* str = "Welcome to GeeksforGeeks!\n";
+            sock.write(str, strlen(str));
         });
         handle.accept(*socket);
         socket->read(); });
