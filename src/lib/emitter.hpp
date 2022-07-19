@@ -105,12 +105,14 @@ class Emitter {
         using FuncList = std::list<Element>;
         using Index = typename FuncList::iterator;
 
+        // 在 Emitter 中的 for_each 中调用
         bool empty() const noexcept override {
             auto pred = [](auto &&element) { return element.first; };
 
             return std::all_of(onceL.cbegin(), onceL.cend(), pred) && std::all_of(onL.cbegin(), onL.cend(), pred);
         }
 
+        // 在 Emitter 中的 for_each 中调用
         void clear() noexcept override {
             if (publishing) {
                 auto func = [](auto &&element) { element.first = true; };
@@ -239,8 +241,15 @@ class Emitter {
         listener<E>().clear();
     }
 
+
+    // 在for_each时自动传入1个 pair 对象。所以 second->clear() 是 std::unique_ptr<BaseListener>> 的函数调用
+    // std::map<int, int> myMap{{1, 2}, {3, 4}, {5, 6}, {7, 8}};
+    // std::for_each(myMap.begin(), myMap.end(), [](const auto &myMapPair) {
+    //     std::cout << "first " << myMapPair.first << " second "
+    //             << myMapPair.second << std::endl;
+    // });
     void clear() noexcept {
-        std::for_each(listeners.begin(), listeners.end(), [](auto &&hdlr) { if(hdlr.second) { hdlr.second->clear(); } });
+        std::for_each(listeners.begin(), listeners.end(), [](auto &&listener) { if(listener.second) { listener.second->clear(); } });
     }
 
     template <typename E>
@@ -250,7 +259,7 @@ class Emitter {
     }
 
     bool empty() const noexcept {
-        return std::all_of(listeners.cbegin(), listeners.cend(), [](auto &&hdlr) { return !hdlr.second || hdlr.second->empty(); });
+        return std::all_of(listeners.cbegin(), listeners.cend(), [](auto &&func) { return !func.second || func.second->empty(); });
     }
 
    private:

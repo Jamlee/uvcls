@@ -49,6 +49,7 @@ template<typename T, typename U>
 class Resource: public UnderlyingType<T, U>, public Emitter<T>, public std::enable_shared_from_this<T> {
 
 public:
+    // req 和 handle 也好都有 data，用于绑定底层资源和上层的封装类关系
     explicit Resource(std::shared_ptr<Loop> ref)
         : UnderlyingType<T, U>{std::move(ref)} {
         this->get()->data = this;
@@ -58,14 +59,17 @@ public:
         return static_cast<bool>(sPtr);
     }
     
+    // 初始化本身的的“共享指针”。sPtr 意思是 shared ptr
     void leak() noexcept {
         sPtr = this->shared_from_this();
     }
 
+    // 释放资源的所有权（不是释放资源）
     void reset() noexcept {
         sPtr.reset();
     }
 
+    // 资源的父级定义为 loop。因为资源都会属于1个loop
     auto parent() const noexcept {
         return this->loop().loop.get();
     }
