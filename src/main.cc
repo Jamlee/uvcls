@@ -1,10 +1,10 @@
-#include <iostream>
 #include <cstring>
+#include <iostream>
 #include <string>
+
 #include "tcp.hpp"
 
-int main()
-{
+int main() {
     const std::string address = std::string{"127.0.0.1"};
     const unsigned int port = 4242;
     auto loop = uvcls::Loop::getDefault();
@@ -13,11 +13,9 @@ int main()
     server->init();
     server->noDelay(true);
     server->keepAlive(true, uvcls::TCPHandle::Time{128});
-    server->on<uvcls::ErrorEvent>([](const auto &, auto &)
-                                  { std::cout << "tcp error" << std::endl; });
+    server->on<uvcls::ErrorEvent>([](const auto &, auto &) { std::cout << "tcp error" << std::endl; });
 
-    server->once<uvcls::ListenEvent>([&loop](const uvcls::ListenEvent &, uvcls::TCPHandle &handle)
-                                     {
+    server->once<uvcls::ListenEvent>([&loop](const uvcls::ListenEvent &, uvcls::TCPHandle &handle) {
         auto socket = std::make_shared<uvcls::TCPHandle>(loop, 0);
         socket->init();
         socket->on<uvcls::ErrorEvent>([](const uvcls::ErrorEvent &, uvcls::TCPHandle &) { 
@@ -31,8 +29,12 @@ int main()
                 std::cout << data.data[i];
             }
             std::cout << std::endl;
-            char* str = "Welcome to GeeksforGeeks!\n";
-            sock.write(str, strlen(str));
+            
+            std::string str = "std::string to char*\n";
+            char * writable = new char[str.size() + 1];
+            std::copy(str.begin(), str.end(), writable);
+            writable[str.size()] = '\0'; // don't forget the terminating 0
+            sock.write(writable, strlen(writable));
         });
         handle.accept(*socket);
         socket->read(); });
